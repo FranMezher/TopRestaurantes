@@ -384,6 +384,7 @@
 <header>
   <h1>🍽️ Top Restaurantes</h1>
   <span id="headerCount">0 restaurantes registrados</span>
+  <span id="syncStatus" style="font-size:0.8rem;color:#888"></span>
 </header>
 
 <div class="container">
@@ -540,12 +541,55 @@
   const FRIENDS = ['Mezher','Nico','Agus','Pele','Topa','Juanma'];
   const COLORS  = { Mezher:'#f0c040', Nico:'#3498db', Agus:'#2ecc71', Pele:'#e74c3c', Topa:'#9b59b6', Juanma:'#e67e22' };
 
-  let data = JSON.parse(localStorage.getItem('topRestaurantes') || '[]');
+  const BIN_ID  = '69ebb58336566621a8ea666f';
+  const BIN_KEY = '$2a$10$Bf5bOn7ltwwWDAQy946WlebQM7puiOjvoRwanXR9rB2Nttjz8Wxya';
+  const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+  const HEADERS = { 'Content-Type': 'application/json', 'X-Master-Key': BIN_KEY };
+
+  let data = [];
   let editId = null;
   let sortKey = 'avg';
   let sortDir = -1;
+  let saving = false;
 
-  function save() { localStorage.setItem('topRestaurantes', JSON.stringify(data)); }
+  function showSyncStatus(msg, color = '#888') {
+    let el = document.getElementById('syncStatus');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = color;
+  }
+
+  async function loadData() {
+    showSyncStatus('Sincronizando…');
+    try {
+      const res = await fetch(BIN_URL + '/latest', { headers: { 'X-Master-Key': BIN_KEY } });
+      const json = await res.json();
+      data = json.record.restaurants || [];
+      showSyncStatus('✓ Sincronizado', '#2ecc71');
+    } catch(e) {
+      data = JSON.parse(localStorage.getItem('topRestaurantes') || '[]');
+      showSyncStatus('Sin conexión — datos locales', '#e74c3c');
+    }
+    renderTable();
+  }
+
+  async function save() {
+    localStorage.setItem('topRestaurantes', JSON.stringify(data));
+    if (saving) return;
+    saving = true;
+    showSyncStatus('Guardando…');
+    try {
+      await fetch(BIN_URL, {
+        method: 'PUT',
+        headers: HEADERS,
+        body: JSON.stringify({ restaurants: data })
+      });
+      showSyncStatus('✓ Guardado', '#2ecc71');
+    } catch(e) {
+      showSyncStatus('Error al guardar', '#e74c3c');
+    }
+    saving = false;
+  }
 
   function calcAvg(scores) {
     const vals = Object.values(scores).filter(v => v !== null && v !== '' && !isNaN(v));
@@ -777,7 +821,7 @@
   // Set today's date as default
   document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
 
-  renderTable();
+  loadData();
 </script>
 </body>
 </html>

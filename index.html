@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Top Restaurantes</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f13;
+      color: #e8e8e8;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 24px 32px;
+      border-bottom: 1px solid #2a2a3e;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f0c040;
+      letter-spacing: 1px;
+    }
+
+    header span { color: #888; font-size: 0.9rem; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
+
+    /* Stats bar */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a3e;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f0c040;
+    }
+
+    .stat-card .label { font-size: 0.8rem; color: #888; margin-top: 4px; }
+
+    /* Actions */
+    .actions { margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+    .btn {
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: #f0c040; color: #0f0f13; }
+    .btn-secondary { background: #2a2a3e; color: #e8e8e8; border: 1px solid #3a3a5e; }
+    .btn-danger { background: #c0392b; color: #fff; }
+
+    .search-box {
+      margin-left: auto;
+      padding: 9px 16px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a3e;
+      border-radius: 8px;
+      color: #e8e8e8;
+      font-size: 0.9rem;
+      width: 220px;
+    }
+
+    .search-box::placeholder { color: #555; }
+    .search-box:focus { outline: none; border-color: #f0c040; }
+
+    /* Sort bar */
+    .sort-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .sort-bar span { color: #888; font-size: 0.82rem; }
+
+    .sort-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid #2a2a3e;
+      background: transparent;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: all .2s;
+    }
+
+    .sort-btn.active { background: #f0c040; color: #0f0f13; border-color: #f0c040; font-weight: 700; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #2a2a3e; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr { background: #1a1a2e; }
+
+    th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: #888;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-top: 1px solid #1e1e2e;
+      transition: background .15s;
+    }
+
+    tbody tr:hover { background: #1a1a2e; }
+
+    td {
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    .restaurant-name { font-weight: 600; color: #fff; }
+    .restaurant-type { font-size: 0.75rem; color: #888; margin-top: 2px; }
+
+    .score-big {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .score-high { color: #2ecc71; }
+    .score-mid  { color: #f0c040; }
+    .score-low  { color: #e74c3c; }
+
+    .friend-score {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      text-align: center;
+      border-radius: 50%;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #2a2a3e;
+      color: #ccc;
+    }
+
+    .friend-score.ns { background: #1a1a2e; color: #444; }
+
+    .price { color: #a0d0ff; font-weight: 600; }
+    .price-pp { font-size: 0.8rem; color: #668; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #2a2a3e;
+      color: #aaa;
+    }
+
+    .row-actions { display: flex; gap: 6px; }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid #2a2a3e;
+      color: #888;
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all .2s;
+    }
+
+    .icon-btn:hover { color: #fff; border-color: #555; }
+    .icon-btn.del:hover { color: #e74c3c; border-color: #e74c3c; }
+
+    /* Modal */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: #1a1a2e;
+      border: 1px solid #2a2a3e;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 { font-size: 1.2rem; color: #f0c040; margin-bottom: 24px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      color: #888;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .field input, .field select, .field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0f0f13;
+      border: 1px solid #2a2a3e;
+      border-radius: 8px;
+      color: #e8e8e8;
+      font-size: 0.9rem;
+    }
+
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none;
+      border-color: #f0c040;
+    }
+
+    .scores-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .score-field label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+
+    .score-field .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #0f0f13;
+    }
+
+    .score-field input[type=number] {
+      width: 100%;
+      padding: 8px 10px;
+      background: #0f0f13;
+      border: 1px solid #2a2a3e;
+      border-radius: 8px;
+      color: #e8e8e8;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .score-field input:focus { outline: none; border-color: #f0c040; }
+
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #444;
+    }
+
+    .empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+    .empty-state p { font-size: 1rem; }
+
+    /* Stars visual */
+    .stars { color: #f0c040; font-size: 0.7rem; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .scores-grid { grid-template-columns: repeat(2, 1fr); }
+      header { flex-direction: column; gap: 8px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🍽️ Top Restaurantes</h1>
+  <span id="headerCount">0 restaurantes registrados</span>
+</header>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats" id="statsBar">
+    <div class="stat-card">
+      <div class="value" id="statTotal">0</div>
+      <div class="label">Restaurantes</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="statBest">—</div>
+      <div class="label">Mejor promedio</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="statAvg">—</div>
+      <div class="label">Promedio general</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="statAvgPP">—</div>
+      <div class="label">Precio promedio x persona</div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" onclick="openModal()">+ Agregar Restaurante</button>
+    <input class="search-box" type="text" id="searchInput" placeholder="Buscar restaurante..." oninput="renderTable()" />
+  </div>
+
+  <!-- Sort -->
+  <div class="sort-bar">
+    <span>Ordenar por:</span>
+    <button class="sort-btn active" data-sort="avg">Promedio ↓</button>
+    <button class="sort-btn" data-sort="name">Nombre</button>
+    <button class="sort-btn" data-sort="price">Precio</button>
+    <button class="sort-btn" data-sort="date">Fecha</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Restaurante</th>
+          <th>Promedio</th>
+          <th>Mezher</th>
+          <th>Nico</th>
+          <th>Agus</th>
+          <th>Pele</th>
+          <th>Topa</th>
+          <th>Juanma</th>
+          <th>Total $</th>
+          <th>x persona</th>
+          <th>Fecha</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState">
+      <div class="icon">🍴</div>
+      <p>Todavía no hay restaurantes cargados.<br>¡Agregá el primero!</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="closeOnOverlay(event)">
+  <div class="modal">
+    <h2 id="modalTitle">Agregar Restaurante</h2>
+
+    <div class="form-grid">
+      <div class="field full">
+        <label>Nombre del restaurante *</label>
+        <input type="text" id="fName" placeholder="Ej: El preferido de siempre" />
+      </div>
+      <div class="field">
+        <label>Tipo / Cocina</label>
+        <input type="text" id="fType" placeholder="Ej: Italiana, Parrilla..." />
+      </div>
+      <div class="field">
+        <label>Fecha de visita</label>
+        <input type="date" id="fDate" />
+      </div>
+      <div class="field">
+        <label>Precio total ($)</label>
+        <input type="number" id="fTotal" min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label>Precio x persona ($)</label>
+        <input type="number" id="fPP" min="0" placeholder="0" />
+      </div>
+      <div class="field full">
+        <label>Notas / comentarios</label>
+        <textarea id="fNotes" rows="2" placeholder="Qué estuvo bueno, qué mejorar..."></textarea>
+      </div>
+    </div>
+
+    <div style="margin: 20px 0 10px;">
+      <label style="font-size:.78rem;color:#888;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:12px;">Puntajes (1–10)</label>
+      <div class="scores-grid">
+        <div class="score-field">
+          <label><span class="avatar" style="background:#f0c040">M</span> Mezher</label>
+          <input type="number" id="sMezher" min="1" max="10" placeholder="—" />
+        </div>
+        <div class="score-field">
+          <label><span class="avatar" style="background:#3498db">N</span> Nico</label>
+          <input type="number" id="sNico" min="1" max="10" placeholder="—" />
+        </div>
+        <div class="score-field">
+          <label><span class="avatar" style="background:#2ecc71">A</span> Agus</label>
+          <input type="number" id="sAgus" min="1" max="10" placeholder="—" />
+        </div>
+        <div class="score-field">
+          <label><span class="avatar" style="background:#e74c3c">P</span> Pele</label>
+          <input type="number" id="sPele" min="1" max="10" placeholder="—" />
+        </div>
+        <div class="score-field">
+          <label><span class="avatar" style="background:#9b59b6">T</span> Topa</label>
+          <input type="number" id="sTopa" min="1" max="10" placeholder="—" />
+        </div>
+        <div class="score-field">
+          <label><span class="avatar" style="background:#e67e22">J</span> Juanma</label>
+          <input type="number" id="sJuanma" min="1" max="10" placeholder="—" />
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRestaurant()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const FRIENDS = ['Mezher','Nico','Agus','Pele','Topa','Juanma'];
+  const COLORS  = { Mezher:'#f0c040', Nico:'#3498db', Agus:'#2ecc71', Pele:'#e74c3c', Topa:'#9b59b6', Juanma:'#e67e22' };
+
+  let data = JSON.parse(localStorage.getItem('topRestaurantes') || '[]');
+  let editId = null;
+  let sortKey = 'avg';
+  let sortDir = -1;
+
+  function save() { localStorage.setItem('topRestaurantes', JSON.stringify(data)); }
+
+  function calcAvg(scores) {
+    const vals = Object.values(scores).filter(v => v !== null && v !== '' && !isNaN(v));
+    if (!vals.length) return null;
+    return (vals.reduce((a,b) => a + Number(b), 0) / vals.length).toFixed(1);
+  }
+
+  function scoreColor(s) {
+    if (s === null) return '';
+    if (s >= 8) return 'score-high';
+    if (s >= 6) return 'score-mid';
+    return 'score-low';
+  }
+
+  function fmtMoney(v) {
+    if (!v) return '—';
+    return '$' + Number(v).toLocaleString('es-AR');
+  }
+
+  function renderTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    let rows = data.filter(r => r.name.toLowerCase().includes(q) || (r.type||'').toLowerCase().includes(q));
+
+    rows.sort((a, b) => {
+      if (sortKey === 'avg') {
+        return sortDir * ((parseFloat(calcAvg(a.scores)) || 0) - (parseFloat(calcAvg(b.scores)) || 0));
+      }
+      if (sortKey === 'name') return sortDir * a.name.localeCompare(b.name);
+      if (sortKey === 'price') return sortDir * ((a.pp || 0) - (b.pp || 0));
+      if (sortKey === 'date') return sortDir * ((a.date||'').localeCompare(b.date||''));
+      return 0;
+    });
+
+    const tbody = document.getElementById('tableBody');
+    const empty = document.getElementById('emptyState');
+
+    if (!rows.length) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      tbody.innerHTML = rows.map((r, i) => {
+        const avg = calcAvg(r.scores);
+        const cls = scoreColor(parseFloat(avg));
+        const friendCells = FRIENDS.map(f => {
+          const s = r.scores[f];
+          const hasScore = s !== null && s !== '' && !isNaN(s);
+          return `<td><span class="friend-score ${hasScore?'':'ns'}" style="${hasScore?'background:'+COLORS[f]+'22;color:'+COLORS[f]:''}">${hasScore ? s : '—'}</span></td>`;
+        }).join('');
+        return `
+          <tr>
+            <td style="color:#555;font-size:.8rem">${i+1}</td>
+            <td>
+              <div class="restaurant-name">${r.name}</div>
+              <div class="restaurant-type">${r.type || ''}</div>
+            </td>
+            <td><span class="score-big ${cls}">${avg || '—'}</span></td>
+            ${friendCells}
+            <td class="price">${fmtMoney(r.total)}</td>
+            <td><span class="price">${fmtMoney(r.pp)}</span></td>
+            <td style="color:#666;font-size:.8rem;white-space:nowrap">${r.date ? r.date.split('-').reverse().join('/') : '—'}</td>
+            <td>
+              <div class="row-actions">
+                <button class="icon-btn" onclick="editRestaurant('${r.id}')">✏️</button>
+                <button class="icon-btn del" onclick="deleteRestaurant('${r.id}')">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    updateStats();
+    updateHeader();
+  }
+
+  function updateStats() {
+    const n = data.length;
+    document.getElementById('statTotal').textContent = n;
+
+    if (!n) {
+      ['statBest','statAvg','statAvgPP'].forEach(id => document.getElementById(id).textContent = '—');
+      return;
+    }
+
+    const avgs = data.map(r => parseFloat(calcAvg(r.scores))).filter(v => !isNaN(v));
+    const best = data.reduce((best, r) => {
+      const a = parseFloat(calcAvg(r.scores));
+      return a > (parseFloat(calcAvg(best.scores)) || 0) ? r : best;
+    }, data[0]);
+
+    document.getElementById('statBest').textContent = best.name.length > 12 ? best.name.slice(0,12)+'…' : best.name;
+    document.getElementById('statAvg').textContent = avgs.length ? (avgs.reduce((a,b)=>a+b,0)/avgs.length).toFixed(1) : '—';
+
+    const pps = data.map(r => r.pp).filter(v => v && !isNaN(v));
+    document.getElementById('statAvgPP').textContent = pps.length ? '$' + Math.round(pps.reduce((a,b)=>+a+ +b,0)/pps.length).toLocaleString('es-AR') : '—';
+  }
+
+  function updateHeader() {
+    document.getElementById('headerCount').textContent = `${data.length} restaurante${data.length !== 1 ? 's' : ''} registrado${data.length !== 1 ? 's' : ''}`;
+  }
+
+  // Sort buttons
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.sort;
+      if (sortKey === key) { sortDir *= -1; }
+      else { sortKey = key; sortDir = -1; }
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable();
+    });
+  });
+
+  // Modal
+  function openModal(id = null) {
+    editId = id;
+    document.getElementById('modalTitle').textContent = id ? 'Editar Restaurante' : 'Agregar Restaurante';
+    clearForm();
+    if (id) {
+      const r = data.find(x => x.id === id);
+      document.getElementById('fName').value = r.name || '';
+      document.getElementById('fType').value = r.type || '';
+      document.getElementById('fDate').value = r.date || '';
+      document.getElementById('fTotal').value = r.total || '';
+      document.getElementById('fPP').value = r.pp || '';
+      document.getElementById('fNotes').value = r.notes || '';
+      FRIENDS.forEach(f => {
+        const v = r.scores[f];
+        document.getElementById('s'+f).value = (v !== null && v !== '') ? v : '';
+      });
+    }
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+    editId = null;
+  }
+
+  function closeOnOverlay(e) {
+    if (e.target === document.getElementById('overlay')) closeModal();
+  }
+
+  function clearForm() {
+    ['fName','fType','fDate','fTotal','fPP','fNotes'].forEach(id => document.getElementById(id).value = '');
+    FRIENDS.forEach(f => document.getElementById('s'+f).value = '');
+  }
+
+  function saveRestaurant() {
+    const name = document.getElementById('fName').value.trim();
+    if (!name) { alert('El nombre del restaurante es obligatorio.'); return; }
+
+    const scores = {};
+    FRIENDS.forEach(f => {
+      const v = document.getElementById('s'+f).value;
+      scores[f] = v === '' ? null : Math.min(10, Math.max(1, Number(v)));
+    });
+
+    const r = {
+      id: editId || Date.now().toString(),
+      name,
+      type: document.getElementById('fType').value.trim(),
+      date: document.getElementById('fDate').value,
+      total: document.getElementById('fTotal').value || null,
+      pp: document.getElementById('fPP').value || null,
+      notes: document.getElementById('fNotes').value.trim(),
+      scores
+    };
+
+    if (editId) {
+      const idx = data.findIndex(x => x.id === editId);
+      data[idx] = r;
+    } else {
+      data.push(r);
+    }
+
+    save();
+    closeModal();
+    renderTable();
+  }
+
+  function editRestaurant(id) { openModal(id); }
+
+  function deleteRestaurant(id) {
+    const r = data.find(x => x.id === id);
+    if (!confirm(`¿Eliminar "${r.name}"?`)) return;
+    data = data.filter(x => x.id !== id);
+    save();
+    renderTable();
+  }
+
+  // Set today's date as default
+  document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+
+  renderTable();
+</script>
+</body>
+</html>

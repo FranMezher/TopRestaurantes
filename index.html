@@ -319,37 +319,22 @@
 
     .notes-icon:hover { opacity: 1; }
 
-    .notes-tooltip {
+    #globalTooltip {
       display: none;
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
+      position: fixed;
       background: #2a2a3e;
       border: 1px solid #3a3a5e;
       border-radius: 8px;
       padding: 10px 14px;
-      width: 220px;
+      width: 240px;
       font-size: 0.82rem;
       color: #ccc;
       line-height: 1.5;
-      z-index: 50;
+      z-index: 9999;
       white-space: normal;
-      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+      box-shadow: 0 4px 20px rgba(0,0,0,.6);
       pointer-events: none;
     }
-
-    .notes-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent;
-      border-top-color: #3a3a5e;
-    }
-
-    .notes-icon:hover .notes-tooltip { display: block; }
 
     /* Notes modal */
     .notes-overlay {
@@ -467,6 +452,8 @@
   </div>
 
 </div>
+
+<div id="globalTooltip"></div>
 
 <!-- Notes Modal -->
 <div class="notes-overlay" id="notesOverlay" onclick="closeNotesModal(event)">
@@ -622,7 +609,7 @@
             <td>
               <div class="notes-cell">
                 <span style="color:#666;font-size:.8rem">${r.date ? r.date.split('-').reverse().join('/') : '—'}</span>
-                ${r.notes ? `<span class="notes-icon" onclick="openNotesModal('${r.id}')">📝<span class="notes-tooltip">${r.notes.replace(/'/g,"&#39;").slice(0,120)}${r.notes.length>120?'…':''}</span></span>` : ''}
+                ${r.notes ? `<span class="notes-icon" onclick="openNotesModal('${r.id}')" onmouseenter="showTooltip(event,'${r.notes.replace(/'/g,"&#39;").replace(/\n/g,' ').slice(0,150)}')" onmouseleave="hideTooltip()">📝</span>` : ''}
               </div>
             </td>
             <td>
@@ -744,6 +731,25 @@
     save();
     closeModal();
     renderTable();
+  }
+
+  function showTooltip(e, text) {
+    const t = document.getElementById('globalTooltip');
+    t.textContent = text;
+    t.style.display = 'block';
+    const rect = e.target.getBoundingClientRect();
+    const tw = 240;
+    let left = rect.left + rect.width / 2 - tw / 2;
+    let top = rect.top - t.offsetHeight - 10;
+    if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+    if (left < 8) left = 8;
+    if (top < 8) top = rect.bottom + 10;
+    t.style.left = left + 'px';
+    t.style.top = top + 'px';
+  }
+
+  function hideTooltip() {
+    document.getElementById('globalTooltip').style.display = 'none';
   }
 
   function openNotesModal(id) {

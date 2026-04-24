@@ -578,17 +578,23 @@
     if (saving) return;
     saving = true;
     showSyncStatus('Guardando…');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      await fetch(BIN_URL, {
+      const res = await fetch(BIN_URL, {
         method: 'PUT',
         headers: HEADERS,
-        body: JSON.stringify({ restaurants: data })
+        body: JSON.stringify({ restaurants: data }),
+        signal: controller.signal
       });
-      showSyncStatus('✓ Guardado', '#2ecc71');
+      if (res.ok) showSyncStatus('✓ Guardado', '#2ecc71');
+      else showSyncStatus('Error al guardar (' + res.status + ')', '#e74c3c');
     } catch(e) {
-      showSyncStatus('Error al guardar', '#e74c3c');
+      showSyncStatus(e.name === 'AbortError' ? 'Timeout al guardar' : 'Error al guardar', '#e74c3c');
+    } finally {
+      clearTimeout(timeout);
+      saving = false;
     }
-    saving = false;
   }
 
   function calcAvg(scores) {
